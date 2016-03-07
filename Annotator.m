@@ -230,12 +230,12 @@ classdef Annotator < handle
             
             % check file
             if ~isfield(d, 'annotations')
-                warn('Invalid annotations file.');
+                warning('Invalid annotations file.');
                 return
             end
             
             if ~strcmp(d.file, AN.file)
-                warn('Annotations were potentially for a different image.');
+                warning('Annotations were potentially for a different image.');
             end
             
             % store file name
@@ -276,7 +276,7 @@ classdef Annotator < handle
         
         function [density, area, count] = fitEllipse(AN, std)
             if 3 >= size(AN.annotations, 1)
-                warn('Insufficient data to fit an ellipse.');
+                warning('Insufficient data to fit an ellipse.');
             end
             
             % standard deviation, for scaling
@@ -333,7 +333,7 @@ classdef Annotator < handle
         
         function [density, area, count] = fitConvexHull(AN)
             if 3 >= size(AN.annotations, 1)
-                warn('Insufficient data to fit an ellipse.');
+                warning('Insufficient data to fit an ellipse.');
             end
 
             % get means (center)
@@ -375,7 +375,7 @@ classdef Annotator < handle
         
         function distances = distancesToNearestNeighbor(AN)
             if 1 >= size(AN.annotations, 1)
-                warn('Insufficient data to measure distance to nearest neighbors.');
+                warning('Insufficient data to measure distance to nearest neighbors.');
             end
             
             % make distances vector
