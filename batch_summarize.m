@@ -35,22 +35,24 @@ for i = 1:numel(files)
             [d1, a1, c1] = an.fitConvexHull();
             [d2, a2, c2] = an.fitEllipse(1);
             [d3, a3, c3] = an.fitEllipse(2);
+            distances = an.distancesToNearestNeighbor();
             
             % draw scale
             an.drawScale();
             
             % save
-            an.saveAnnotatedImage(sprintf('%d.jpg', 1 + (length(ret) / 2)));
+            an.saveAnnotatedImage(sprintf('%d.jpg', 1 + (length(ret) / 3)));
             
             % scatter histogram
             f = figure;
             scatterhist(an.annotations(:, 1) * an.scale, an.annotations(:, 2) * an.scale);
-            print(f, sprintf('%d.png', 1 + (length(ret) / 2)), '-dpng', '-r300');
+            print(f, sprintf('%d.png', 1 + (length(ret) / 3)), '-dpng', '-r300');
             close(f);
             
             % append to ret
             ret{end + 1} = im_file;
             ret{end + 1} = [size(an.annotations, 1) d1 a1 c1 d2 a2 c2 d3 a3 c3];
+            ret{end + 1} = distances;
             
             delete(an);
         end
