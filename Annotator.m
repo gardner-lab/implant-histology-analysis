@@ -392,15 +392,15 @@ classdef Annotator < handle
         
         function drawScale(AN)
             x1 = 40;
-            y1 = 40;
-            x2 = round(x1 + 100 * AN.scale);
+            y1 = 45;
+            x2 = round(x1 + 100 / AN.scale);
             y2 = y1;
             
             % hold axes
             hold(AN.axes, 'on');
             
-            AN.plot_other{end + 1} = plot(AN.axes, [x1 x2], [y1 y2], 'g', 'LineWidth', 5);
-            AN.plot_other{end + 1} = text(x1, y1 - 15, '100\mu', 'Color', [0 1 0], 'FontSize', 20, 'FontWeight', 'bold');
+            AN.plot_other{end + 1} = plot(AN.axes, [x1 x2], [y1 y2], 'g', 'LineWidth', 3);
+            AN.plot_other{end + 1} = text(x1, y1 - 20, '100\mu', 'Color', [0 1 0], 'FontSize', 20, 'FontWeight', 'bold');
             
             % unhold axes
             hold(AN.axes, 'off');
