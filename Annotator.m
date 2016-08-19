@@ -12,7 +12,7 @@ classdef Annotator < handle
         annot_file = '';
         
         % annotations
-        annotations = [];
+        annotations = []; % rows: points, columns: x, y, type
         scale = 1; % units/pixels
     end
     
@@ -20,6 +20,11 @@ classdef Annotator < handle
         % mode
         mode = 1; % 1 - draw, 2 - scale
         saved = true;
+        
+        % annotation types
+        annot_type = 1; % current annotation type
+        annot_types = {'Fiber', 'Neuron'}; % names for annotation types
+        annot_colors = [0 1 0; 1 0.5 0]; % colors for annotation types
         
         % handles
         win
@@ -116,6 +121,35 @@ classdef Annotator < handle
                 'ClickedCallback', {@AN.cb_magic}, 'TooltipString', ...
                 'Magic');
             
+            % add type buttons
+            for i = 1:length(AN.annot_types)
+                nice_name = AN.annot_types{i};
+                color = AN.annot_colors(i, :);
+                
+                width = 16;
+                height = 16;
+                
+                ico = nan(height, width, 3);
+                [x, y] = meshgrid(1:width, 1:height);
+                mask = ((x - (width + 1) / 2) .^ 2 + (y - (height + 1) / 2) .^ 2) < ((min(width, height) / 2) ^ 2);
+                
+                ico(cat(3, mask, false(height, width), false(height, width))) = color(:, 1);
+                ico(cat(3, false(height, width), mask, false(height, width))) = color(:, 2);
+                ico(cat(3, false(height, width), false(height, width), mask)) = color(:, 3);
+                
+                if i == 1
+                    sep = 'on';
+                    state = 'on';
+                else
+                    sep = 'off';
+                    state = 'off';
+                end
+                
+                uitoggletool('Parent', AN.gui_toolbar, 'CData', ico, ...
+                    'ClickedCallback', {@AN.cb_selectAnnotationType, i}, 'TooltipString', ...
+                    nice_name, 'Separator', sep, 'State', state);
+            end
+            
             % get axes
             AN.axes = axes('Parent', AN.win);
             axis off;
@@ -192,8 +226,13 @@ classdef Annotator < handle
                 return;
             end
             
+            % no type? do nothing
+            if isempty(AN.annot_type)
+                return;
+            end
+            
             % add to annotations
-            AN.addAnnotation(i, j);
+            AN.addAnnotation(i, j, AN.annot_type);
         end
         
         function cb_magic(AN, h, event)
@@ -206,6 +245,43 @@ classdef Annotator < handle
             
             AN.plot_other{end + 1} = figure;
             scatterhist(AN.annotations(:, 1), AN.annotations(:, 2));
+            title('All annotations');
+            
+            % multiple annotation types?
+            types = unique(AN.annotations(:, 3));
+            if 1 < length(types)
+                for i = 1:length(types)
+                    idx = AN.annotations(:, 3) == types(i);
+                    
+                    % plot
+                    AN.plot_other{end + 1} = figure;
+                    scatterhist(AN.annotations(idx, 1), AN.annotations(idx, 2));
+                    if types(i) <= length(AN.annot_types)
+                        title(sprintf('Annotation %s', AN.annot_types{types(i)}));
+                        fprintf('Number of %s: %d\n', AN.annot_types{types(i)}, sum(idx));
+                    else
+                        title(sprintf('Annotation %d', types(i)));
+                        fprintf('Number of annotation %d: %d\n', types(i), sum(idx));
+                    end
+                end
+            end
+        end
+        
+        function cb_selectAnnotationType(AN, h, event, annot_type)
+            if strcmp(h.State, 'on')
+                % set current annotation type
+                AN.annot_type = annot_type;
+                
+                % uncheck other boxes
+                for i = 1:length(h.Parent.Children)
+                    if strcmp(class(h.Parent.Children(i)), class(h)) && h.Parent.Children(i) ~= h
+                        h.Parent.Children(i).State = 'off';
+                    end
+                end
+            else
+                % clear annotation type
+                AN.annot_type = [];
+            end
         end
         
         function cb_closeWindow(AN, h, event)
@@ -247,7 +323,12 @@ classdef Annotator < handle
             AN.annot_file = fl;
             
             % copy data
-            AN.annotations = d.annotations;
+            % backwards compatible...
+            if 3 == size(d.annotations, 2)
+                AN.annotations = d.annotations;
+            else
+                AN.annotations = [d.annotations ones(size(d.annotations, 1), 1)];
+            end
             AN.scale = d.scale;
             
             % redraw
@@ -433,21 +514,29 @@ classdef Annotator < handle
             
             % add new plot
             if ~isempty(AN.annotations)
-                AN.plot_annotations = scatter(AN.axes, AN.annotations(:, 1), AN.annotations(:, 2), 10, 'g', 'filled');
+                % get types and colors
+                colors = AN.annot_colors;
+                m_type = max(AN.annotations(:, 3));
+                if m_type > size(AN.annot_colors, 1)
+                    colors = [colors; lines(m_type - size(AN.annot_colors, 1))];
+                end
+                
+                % plot
+                AN.plot_annotations = scatter(AN.axes, AN.annotations(:, 1), AN.annotations(:, 2), 10, colors(AN.annotations(:, 3), :), 'filled');
             end
             
             % unhold axes
             hold(AN.axes, 'off');
         end
         
-        function addAnnotation(AN, i, j)
+        function addAnnotation(AN, i, j, type)
             % already in the lsit?
-            if ~isempty(AN.annotations) && ismember([i j], AN.annotations, 'rows')
+            if ~isempty(AN.annotations) && ismember([i j type], AN.annotations, 'rows')
                 return;
             end
             
             % add to annotations
-            AN.annotations = [AN.annotations; i j];
+            AN.annotations = [AN.annotations; i j type];
             
             % mark unsaved
             AN.saved = false;
