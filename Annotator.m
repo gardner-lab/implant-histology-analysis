@@ -556,7 +556,7 @@ classdef Annotator < handle
             end
 
             % measure distances
-            dist = sqrt(sum((AN.annotations - repmat([i j], size(AN.annotations, 1), 1)) .^ 2, 2));
+            dist = sqrt(sum((AN.annotations(:, [1 2]) - repmat([i j], size(AN.annotations, 1), 1)) .^ 2, 2));
 
             % find shortest distance
             [v, idx] = min(dist);
