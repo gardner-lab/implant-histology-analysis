@@ -41,6 +41,11 @@ classdef Annotator < handle
         function AN = Annotator(file, image, annot_file)
             [path, nm] = fileparts(file);
             
+            % load image
+            if ~exist('image', 'var') || isempty(image)
+                image = imread(file);
+            end
+            
             % set parameters
             AN.name = nm;
             AN.file = file;
@@ -325,7 +330,7 @@ classdef Annotator < handle
             hold(AN.axes, 'on');
             
             % plot
-            AN.plot_other{end + 1} = plot(AN.axes, e(1, :), e(2, :), 'Color', 'k');
+            AN.plot_other{end + 1} = plot(AN.axes, e(1, :), e(2, :), 'Color', 'g');
             
             % unhold axes
             hold(AN.axes, 'off');
@@ -391,8 +396,8 @@ classdef Annotator < handle
         end
         
         function drawScale(AN)
-            x1 = 40;
-            y1 = 45;
+            x1 = 120;
+            y1 = 300;
             x2 = round(x1 + 100 / AN.scale);
             y2 = y1;
             
@@ -428,7 +433,7 @@ classdef Annotator < handle
             
             % add new plot
             if ~isempty(AN.annotations)
-                AN.plot_annotations = scatter(AN.axes, AN.annotations(:, 1), AN.annotations(:, 2), 'r', 'filled');
+                AN.plot_annotations = scatter(AN.axes, AN.annotations(:, 1), AN.annotations(:, 2), 10, 'g', 'filled');
             end
             
             % unhold axes

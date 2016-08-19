@@ -45,7 +45,11 @@ for i = 1:numel(files)
             
             % scatter histogram
             f = figure;
-            scatterhist(an.annotations(:, 1) * an.scale, an.annotations(:, 2) * an.scale);
+            % flip y axis (axis ij messes up histogram)
+            y = an.annotations(:, 2) * an.scale;
+            my = mean(y);
+            y = 2 * my - y;
+            scatterhist(an.annotations(:, 1) * an.scale, y);
             print(f, sprintf('%d.png', 1 + (length(ret) / 3)), '-dpng', '-r300');
             close(f);
             
