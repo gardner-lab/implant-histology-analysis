@@ -109,6 +109,18 @@ classdef Annotator < handle
                 'ClickedCallback', {@AN.cb_save}, 'TooltipString', ...
                 'Save');
             
+            % add layers button
+            [ico, ~, alpha] = imread(fullfile(matlabroot, 'toolbox', 'matlab', 'icons', 'tool_legend.png'));
+            if isa(ico, 'uint8')
+                ico = double(ico) / (256 - 1);
+            elseif isa(ico, 'uint16')
+                ico = double(ico) / (256 * 256 - 1);
+            end
+            ico(repmat(alpha == 0, 1, 1, size(ico, 3))) = nan;
+            uipushtool('Parent', AN.gui_toolbar, 'CData', ico, ...
+                'ClickedCallback', {@AN.cb_showLayers}, 'TooltipString', ...
+                'Show layers');
+            
             % add magic button
             [ico, ~, alpha] = imread(fullfile(matlabroot, 'toolbox', 'matlab', 'icons', 'tool_shape_ellipse.png'));
             if isa(ico, 'uint8')
@@ -233,6 +245,29 @@ classdef Annotator < handle
             
             % add to annotations
             AN.addAnnotation(i, j, AN.annot_type);
+        end
+        
+        function cb_showLayers(AN, h, event)
+            names = {'NeuN', 'Green', 'DAPI'};
+            
+            for i = 1:size(AN.image, 3)
+                % skip green
+                if i == 2
+                    continue
+                end
+                
+                % get image
+                cur = imadjust(AN.image(:, :, i));
+                
+                % make figure
+                f = figure('Name', names{i}, 'NumberTitle', 'off');
+                
+                % make axes
+                ax = axes('Parent', f);
+                axis off;
+                imshow(cur, 'Parent', ax, 'Border', 'tight');
+                pan off;
+            end
         end
         
         function cb_magic(AN, h, event)
