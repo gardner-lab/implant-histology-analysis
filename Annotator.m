@@ -109,6 +109,18 @@ classdef Annotator < handle
                 'ClickedCallback', {@AN.cb_save}, 'TooltipString', ...
                 'Save');
             
+            % add scale button
+            [ico, ~, alpha] = imread(fullfile(matlabroot, 'toolbox', 'matlab', 'icons', 'tool_line.png'));
+            if isa(ico, 'uint8')
+                ico = double(ico) / (256 - 1);
+            elseif isa(ico, 'uint16')
+                ico = double(ico) / (256 * 256 - 1);
+            end
+            ico(repmat(alpha == 0, 1, 1, size(ico, 3))) = nan;
+            uipushtool('Parent', AN.gui_toolbar, 'CData', ico, ...
+                'ClickedCallback', {@AN.setScale}, 'TooltipString', ...
+                'Set Scale');
+            
             % add layers button
             [ico, ~, alpha] = imread(fullfile(matlabroot, 'toolbox', 'matlab', 'icons', 'tool_legend.png'));
             if isa(ico, 'uint8')
@@ -369,6 +381,9 @@ classdef Annotator < handle
             % redraw
             AN.redrawAnnotations();
             
+            % draw scale
+            AN.drawScale();
+            
             % mark saved
             AN.saved = true;
         end
@@ -406,10 +421,10 @@ classdef Annotator < handle
             end
 
             % get means (center)
-            mu = mean(AN.annotations, 1);
+            mu = mean(AN.annotations(:, 1:2), 1);
             
             % subtract mean
-            annot = bsxfun(@minus, AN.annotations, mu);
+            annot = bsxfun(@minus, AN.annotations(:, 1:2), mu);
             
             % figure out scaling
             conf = 2 * normcdf(std) - 1; % 95% of the population
@@ -433,8 +448,8 @@ classdef Annotator < handle
             e = bsxfun(@plus, VV * e, mu'); % project unit circle to space
             
             % calculate area
-            [c_a, c_b] = inpolygon(AN.annotations(:, 1), AN.annotations(:, 2), e(1, :), e(2, :));
-            count = sum(c_a) + sum(c_b);
+            c = inpolygon(AN.annotations(:, 1), AN.annotations(:, 2), e(1, :), e(2, :));
+            count = sum(c);
             area = polyarea(e(1, :) * AN.scale, e(2, :) * AN.scale);
             density = count / area;
             fprintf('** ELLIPSE (conf = %.1f) **\n', conf * 100);
@@ -511,9 +526,27 @@ classdef Annotator < handle
             end
         end
         
+        function setScale(AN, h, event)
+            if AN.scale == 1
+                def = {''};
+            else
+                def = {sprintf('%.5f', AN.scale)};
+            end
+            answer = inputdlg('Enter scale (\mu m/px):', 'Set Scale', 1, def, struct('Interpreter', 'tex'));
+            
+            if ~isempty(answer)
+                new_scale = str2double(answer{:});
+                if AN.scale ~= new_scale && new_scale > 0 && new_scale < 1000
+                    AN.scale = new_scale;
+                    AN.saved = false;
+                    AN.drawScale();
+                end
+            end
+        end
+        
         function drawScale(AN)
-            x1 = 120;
-            y1 = 300;
+            x1 = 20;
+            y1 = 100;
             x2 = round(x1 + 100 / AN.scale);
             y2 = y1;
             
